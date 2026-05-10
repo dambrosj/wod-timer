@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Adaptive-icon foreground: stopwatch shape.
+  Canvas: 108 × 108 dp. Safe zone (always visible): 18–90 on both axes.
+
+  Geometry (centered in safe zone):
+    Crown bar  — y 32, x 46–62
+    Stem       — (54,32) to (54,40)
+    Body       — circle center (54,60) radius 20  →  spans y 40–80
+    12 o'clock — (54,40) to (54,47)
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Crown horizontal bar -->
+    <path
+        android:strokeWidth="5"
+        android:strokeColor="#3DBD8E"
+        android:strokeLineCap="round"
+        android:pathData="M46,32 L62,32" />
+
+    <!-- Stem connecting crown to circle -->
+    <path
+        android:strokeWidth="5"
+        android:strokeColor="#3DBD8E"
+        android:strokeLineCap="round"
+        android:pathData="M54,32 L54,40" />
+
+    <!-- Body circle — center (54,60) r=20 -->
+    <path
+        android:strokeWidth="6"
+        android:strokeColor="#3DBD8E"
+        android:fillColor="#00000000"
+        android:pathData="M54,60 m-20,0 a20,20 0 1,0 40,0 a20,20 0 1,0 -40,0" />
+
+    <!-- 12 o'clock tick mark (inside circle, top) -->
+    <path
+        android:strokeWidth="4"
+        android:strokeColor="#3DBD8E"
+        android:strokeLineCap="round"
+        android:pathData="M54,40 L54,47" />
+
+</vector>

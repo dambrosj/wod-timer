@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">WOD</string>
+
+    <!-- Drawer -->
+    <string name="drawer_timer">Timer</string>
+    <string name="drawer_my_wods">I miei WOD</string>
+    <string name="drawer_diary">Diario del Workout</string>
+    <string name="drawer_news">Smart News</string>
+    <string name="drawer_settings">Impostazioni e aiuto</string>
+
+    <!-- Home -->
+    <string name="home_title">wod</string>
+    <string name="home_subtitle">TIMER</string>
+    <string name="home_diary_link">DIARIO DEL WORKOUT</string>
+
+    <!-- Timer types -->
+    <string name="timer_amrap">AMRAP</string>
+    <string name="timer_for_time">FOR TIME</string>
+    <string name="timer_emom">EMOM</string>
+    <string name="timer_tabata">TABATA</string>
+    <string name="timer_mix">MIX</string>
+    <string name="badge_premium">PREMIUM</string>
+
+    <!-- Config screen -->
+    <string name="config_set_timer">Imposta il timer %1$s</string>
+    <string name="config_series">Serie</string>
+    <string name="config_work">Lavoro</string>
+    <string name="config_rest">Riposo</string>
+    <string name="config_add_set">Aggiungi set (opzionale)</string>
+    <string name="config_add_note">Aggiungi note</string>
+    <string name="config_start_timer">AVVIA IL TIMER</string>
+    <string name="config_total_time">Tempo totale: %1$s</string>
+    <string name="config_save_as_wod">Salva come WOD</string>
+    <string name="config_wod_repeat_title">Ripetizioni WOD</string>
+    <string name="config_wod_rounds">Round WOD</string>
+    <string name="config_rest_between">Riposo tra round</string>
+    <string name="config_exercises_title">Esercizi</string>
+    <string name="config_same_for_each">Stesso esercizio per ogni serie</string>
+    <string name="config_different_per_series">Esercizio diverso per serie</string>
+
+    <!-- Timer running -->
+    <string name="timer_tap_to_start">tocca per iniziare</string>
+    <string name="timer_long_press_skip">Premi a lungo per saltare</string>
+    <string name="timer_long_press_skip_rest">Premi a lungo per saltare il riposo</string>
+    <string name="timer_phase_work">Lavoro</string>
+    <string name="timer_phase_rest">Riposo</string>
+    <string name="timer_phase_wod_rest">Riposo WOD</string>
+    <string name="timer_round_wod">Round WOD %1$d/%2$d</string>
+    <string name="timer_next_exercise">Prossimo: %1$s</string>
+    <string name="timer_next_round">Prossimo: Round %1$d/%2$d</string>
+    <string name="timer_next_round_with_exercise">Prossimo: Round %1$d/%2$d — %3$s</string>
+    <string name="timer_action_pause">PAUSA</string>
+    <string name="timer_action_resume">RIPRENDI</string>
+    <string name="timer_action_skip">SALTA</string>
+
+    <!-- Settings -->
+    <string name="settings_audio">Audio</string>
+    <string name="settings_audio_master">Suoni attivi</string>
+    <string name="settings_audio_volume">Volume in-app</string>
+    <string name="settings_audio_countdown">Cue ultimi 3 secondi</string>
+    <string name="settings_audio_halfway">Cue a metà work</string>
+    <string name="settings_audio_phase">Cue cambio fase</string>
+    <string name="settings_audio_complete">Cue fine workout</string>
+    <string name="settings_audio_test">Testa audio</string>
+    <string name="settings_theme">Tema</string>
+    <string name="settings_theme_dark">Scuro</string>
+    <string name="settings_theme_light">Chiaro</string>
+    <string name="settings_theme_auto">Automatico</string>
+    <string name="settings_default_countdown">Countdown iniziale</string>
+    <string name="settings_presets">Preset salvati</string>
+    <string name="settings_about">Informazioni</string>
+
+    <!-- Notification -->
+    <string name="notif_channel_timer">Timer in esecuzione</string>
+    <string name="notif_timer_running">Timer in corso · %1$s</string>
+    <string name="notif_timer_paused">In pausa · %1$s</string>
+</resources>
