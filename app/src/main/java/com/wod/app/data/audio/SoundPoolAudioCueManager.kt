@@ -28,7 +28,11 @@ class SoundPoolAudioCueManager(
         .setMaxStreams(4)
         .setAudioAttributes(
             AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_ALARM)
+                // USAGE_GAME routes to the media stream (same as Spotify):
+                // - does NOT request audio focus → Spotify keeps playing, never paused
+                // - volume scale is identical to music → at 1.0f cues are loud over music
+                // - our in-app slider (0f..1f) gives independent control on top of media volume
+                .setUsage(AudioAttributes.USAGE_GAME)
                 .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                 .build()
         )
