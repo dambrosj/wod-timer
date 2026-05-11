@@ -3,11 +3,11 @@
   Adaptive-icon foreground: stopwatch shape.
   Canvas: 108 × 108 dp. Safe zone (always visible): 18–90 on both axes.
 
-  Geometry (centered in safe zone):
-    Crown bar  — y 32, x 46–62
-    Stem       — (54,32) to (54,40)
-    Body       — circle center (54,60) radius 20  →  spans y 40–80
-    12 o'clock — (54,40) to (54,47)
+  Geometry scaled ×0.9 from original, centered at (54, 56):
+    Crown bar  — y 34, x 47–61
+    Stem       — (54,34) to (54,42)
+    Body       — circle center (54,60) radius 18  →  spans y 42–78
+    12 o'clock — (54,42) to (54,48)
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
@@ -18,29 +18,29 @@
     <!-- Crown horizontal bar -->
     <path
         android:strokeWidth="5"
-        android:strokeColor="#3DBD8E"
+        android:strokeColor="#FFFFFF"
         android:strokeLineCap="round"
-        android:pathData="M46,32 L62,32" />
+        android:pathData="M47,34 L61,34" />
 
     <!-- Stem connecting crown to circle -->
     <path
         android:strokeWidth="5"
-        android:strokeColor="#3DBD8E"
+        android:strokeColor="#FFFFFF"
         android:strokeLineCap="round"
-        android:pathData="M54,32 L54,40" />
+        android:pathData="M54,34 L54,42" />
 
-    <!-- Body circle — center (54,60) r=20 -->
+    <!-- Body circle — center (54,60) r=18 -->
     <path
-        android:strokeWidth="6"
-        android:strokeColor="#3DBD8E"
+        android:strokeWidth="5.5"
+        android:strokeColor="#FFFFFF"
         android:fillColor="#00000000"
-        android:pathData="M54,60 m-20,0 a20,20 0 1,0 40,0 a20,20 0 1,0 -40,0" />
+        android:pathData="M54,60 m-18,0 a18,18 0 1,0 36,0 a18,18 0 1,0 -36,0" />
 
     <!-- 12 o'clock tick mark (inside circle, top) -->
     <path
         android:strokeWidth="4"
-        android:strokeColor="#3DBD8E"
+        android:strokeColor="#FFFFFF"
         android:strokeLineCap="round"
-        android:pathData="M54,40 L54,47" />
+        android:pathData="M54,42 L54,48" />
 
 </vector>
