@@ -38,6 +38,9 @@ fun EmomConfigScreen(
     onStart: (TimerConfig.Emom) -> Unit,
     initialConfig: TimerConfig.Emom? = null,
     onSaveEdited: ((TimerConfig.Emom) -> Unit)? = null,
+    initialWodName: String? = null,
+    initialWodDesc: String? = null,
+    onRenameWod: ((String, String) -> Unit)? = null,
 ) {
     var totalMinutes by rememberSaveable { mutableIntStateOf(initialConfig?.totalMinutes ?: 10) }
     var intervalSeconds by rememberSaveable { mutableIntStateOf(initialConfig?.intervalSeconds ?: 60) }
@@ -69,6 +72,9 @@ fun EmomConfigScreen(
         onSaveAsWod = if (onSaveEdited == null) { name, desc ->
             scope.launch { wodApp.savedWodRepository.saveFromConfig(name, desc, config) }
         } else null,
+        initialWodName = initialWodName,
+        initialWodDesc = initialWodDesc,
+        onRenameWod = onRenameWod,
     ) {
         Spacer(Modifier.height(WodTheme.spacing.l))
 

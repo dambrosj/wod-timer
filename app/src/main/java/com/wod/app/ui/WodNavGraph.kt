@@ -7,6 +7,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -132,13 +136,25 @@ fun WodNavGraph(
                 arguments = listOf(navArgument("id") { type = NavType.StringType }),
             ) {
                 val app = LocalContext.current.applicationContext as WodApp
-                val wod = app.selectedWod ?: run { navController.popBackStack(); return@composable }
-                val config = runCatching { Json.decodeFromString<TimerConfig>(wod.configJson) }.getOrNull()
+                val initialWod = app.selectedWod ?: run { navController.popBackStack(); return@composable }
+                // Mutable so renaming updates the header without losing config edits.
+                var wod by remember { mutableStateOf(initialWod) }
+                val config = remember(wod.id) {
+                    runCatching { Json.decodeFromString<TimerConfig>(wod.configJson) }.getOrNull()
+                }
                 ConfigScreen(
                     type = wod.type,
                     onBack = { navController.popBackStack() },
                     onStart = {},
                     initialConfig = config,
+                    initialWodName = wod.name,
+                    initialWodDesc = wod.description,
+                    onRenameWod = { newName, newDesc ->
+                        val updated = wod.copy(name = newName, description = newDesc)
+                        wod = updated
+                        app.selectedWod = updated
+                        app.appScope.launch { app.savedWodRepository.save(updated) }
+                    },
                     onSaveEdited = { newConfig ->
                         val newJson = Json.encodeToString<TimerConfig>(newConfig)
                         app.appScope.launch { app.savedWodRepository.save(wod.copy(configJson = newJson)) }

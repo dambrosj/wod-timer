@@ -40,6 +40,9 @@ fun ForTimeConfigScreen(
     onStart: (TimerConfig.ForTime) -> Unit,
     initialConfig: TimerConfig.ForTime? = null,
     onSaveEdited: ((TimerConfig.ForTime) -> Unit)? = null,
+    initialWodName: String? = null,
+    initialWodDesc: String? = null,
+    onRenameWod: ((String, String) -> Unit)? = null,
 ) {
     var timecapSeconds by rememberSaveable { mutableIntStateOf(initialConfig?.timecapSeconds ?: (10 * 60)) }
     var rounds by rememberSaveable { mutableIntStateOf(initialConfig?.rounds ?: 1) }
@@ -68,6 +71,9 @@ fun ForTimeConfigScreen(
         onSaveAsWod = if (onSaveEdited == null) { name, desc ->
             scope.launch { wodApp.savedWodRepository.saveFromConfig(name, desc, config) }
         } else null,
+        initialWodName = initialWodName,
+        initialWodDesc = initialWodDesc,
+        onRenameWod = onRenameWod,
     ) {
         Spacer(Modifier.height(WodTheme.spacing.l))
 

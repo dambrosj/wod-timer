@@ -37,6 +37,9 @@ fun AmrapConfigScreen(
     onStart: (TimerConfig.Amrap) -> Unit,
     initialConfig: TimerConfig.Amrap? = null,
     onSaveEdited: ((TimerConfig.Amrap) -> Unit)? = null,
+    initialWodName: String? = null,
+    initialWodDesc: String? = null,
+    onRenameWod: ((String, String) -> Unit)? = null,
 ) {
     var durationSeconds by rememberSaveable { mutableIntStateOf(initialConfig?.durationSeconds ?: (8 * 60)) }
     var repeat by rememberSaveable(stateSaver = WodRepeatConfigSaver) { mutableStateOf(initialConfig?.repeat ?: WodRepeatConfig()) }
@@ -63,6 +66,9 @@ fun AmrapConfigScreen(
         onSaveAsWod = if (onSaveEdited == null) { name, desc ->
             scope.launch { wodApp.savedWodRepository.saveFromConfig(name, desc, config) }
         } else null,
+        initialWodName = initialWodName,
+        initialWodDesc = initialWodDesc,
+        onRenameWod = onRenameWod,
     ) {
         Spacer(Modifier.height(WodTheme.spacing.l))
 

@@ -16,6 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -25,12 +26,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.ui.unit.dp
 import com.wod.app.R
 import com.wod.app.ui.theme.WodTheme
@@ -38,14 +45,17 @@ import com.wod.app.ui.theme.WodTheme
 /**
  * Shared scaffold for every timer config screen (T21).
  *
- * @param title         Timer type name, e.g. "TABATA".
- * @param totalSeconds  Live total time calculation for the subtitle on the CTA.
- * @param onBack        Back arrow tap callback.
- * @param onStart       CTA button tap callback.
- * @param ctaLabel      Override the CTA button text; null uses the default string resource.
- * @param showBookmark  Show the bookmark icon (false in edit mode).
- * @param onSaveAsWod   If non-null, the bookmark icon triggers a save-as-WOD dialog.
- * @param content       Config-specific pickers and blocks.
+ * @param title             Timer type name, e.g. "TABATA".
+ * @param totalSeconds      Live total time calculation for the subtitle on the CTA.
+ * @param onBack            Back arrow tap callback.
+ * @param onStart           CTA button tap callback.
+ * @param ctaLabel          Override the CTA button text; null uses the default string resource.
+ * @param showBookmark      Show the bookmark icon (false in edit mode).
+ * @param onSaveAsWod       If non-null, the bookmark icon triggers a save-as-WOD dialog.
+ * @param initialWodName    Pre-filled WOD name shown in edit mode (enables the rename pencil icon).
+ * @param initialWodDesc    Pre-filled WOD description for the rename dialog.
+ * @param onRenameWod       Called with (name, description) when the user confirms the rename dialog.
+ * @param content           Config-specific pickers and blocks.
  */
 @Composable
 fun ConfigScaffold(
@@ -56,10 +66,14 @@ fun ConfigScaffold(
     ctaLabel: String? = null,
     showBookmark: Boolean = true,
     onSaveAsWod: ((name: String, description: String) -> Unit)? = null,
+    initialWodName: String? = null,
+    initialWodDesc: String? = null,
+    onRenameWod: ((name: String, desc: String) -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val colors = WodTheme.colors
     var showSaveDialog by remember { mutableStateOf(false) }
+    var showRenameDialog by remember { mutableStateOf(false) }
 
     if (showSaveDialog) {
         SaveWodDialog(
@@ -67,6 +81,18 @@ fun ConfigScaffold(
             onConfirm = { name, desc ->
                 showSaveDialog = false
                 onSaveAsWod?.invoke(name, desc)
+            },
+        )
+    }
+
+    if (showRenameDialog && onRenameWod != null) {
+        RenameWodDialog(
+            initialName = initialWodName ?: "",
+            initialDesc = initialWodDesc ?: "",
+            onDismiss = { showRenameDialog = false },
+            onConfirm = { name, desc ->
+                showRenameDialog = false
+                onRenameWod(name, desc)
             },
         )
     }
@@ -98,16 +124,45 @@ fun ConfigScaffold(
                         modifier = Modifier.size(24.dp),
                     )
                 }
-                Text(
-                    text = title,
-                    style = WodTheme.typography.headlineMedium,
-                    color = colors.textPrimary,
-                    textAlign = TextAlign.Center,
+                // Center: type title + optional WOD name subtitle
+                Column(
                     modifier = Modifier.align(Alignment.Center),
-                )
-                IconButton(onClick = { showSaveDialog = true }, modifier = Modifier.align(Alignment.CenterEnd)) {
-                    if (showBookmark) {
-                        Icon(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        text = title,
+                        style = if (initialWodName != null)
+                            WodTheme.typography.labelSmall
+                        else
+                            WodTheme.typography.headlineMedium,
+                        color = if (initialWodName != null) colors.textSecondary else colors.textPrimary,
+                        textAlign = TextAlign.Center,
+                    )
+                    if (initialWodName != null) {
+                        Text(
+                            text = initialWodName,
+                            style = WodTheme.typography.headlineMedium,
+                            color = colors.textPrimary,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                }
+                // Right: bookmark (new) or rename pencil (edit)
+                IconButton(
+                    onClick = {
+                        if (onRenameWod != null) showRenameDialog = true
+                        else showSaveDialog = true
+                    },
+                    modifier = Modifier.align(Alignment.CenterEnd),
+                ) {
+                    when {
+                        onRenameWod != null -> Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Rinomina",
+                            tint = colors.iconDefault,
+                            modifier = Modifier.size(24.dp),
+                        )
+                        showBookmark -> Icon(
                             imageVector = Icons.Default.Bookmark,
                             contentDescription = "Preset",
                             tint = colors.iconDefault,
@@ -165,4 +220,71 @@ fun ConfigScaffold(
             }
         }
     }
+}
+
+// ── Rename dialog (edit mode only) ───────────────────────────────────────────
+
+@Composable
+private fun RenameWodDialog(
+    initialName: String,
+    initialDesc: String,
+    onDismiss: () -> Unit,
+    onConfirm: (name: String, desc: String) -> Unit,
+) {
+    val colors = WodTheme.colors
+    val typography = WodTheme.typography
+    val spacing = WodTheme.spacing
+    var name by rememberSaveable { mutableStateOf(initialName) }
+    var desc by rememberSaveable { mutableStateOf(initialDesc) }
+
+    val fieldColors = OutlinedTextFieldDefaults.colors(
+        focusedTextColor     = colors.textPrimary,
+        unfocusedTextColor   = colors.textPrimary,
+        focusedBorderColor   = colors.accentTabata,
+        unfocusedBorderColor = colors.divider,
+        cursorColor          = colors.accentTabata,
+    )
+
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor   = colors.bgSurface,
+        title = {
+            Text("Rinomina WOD", style = typography.titleMedium, color = colors.textPrimary)
+        },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Nome *", color = colors.textSecondary) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = fieldColors,
+                )
+                Spacer(Modifier.height(spacing.s))
+                OutlinedTextField(
+                    value = desc,
+                    onValueChange = { desc = it },
+                    label = { Text("Descrizione (opzionale)", color = colors.textSecondary) },
+                    maxLines = 3,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = fieldColors,
+                )
+            }
+        },
+        confirmButton = {
+            androidx.compose.material3.TextButton(
+                onClick = { if (name.isNotBlank()) onConfirm(name.trim(), desc.trim()) },
+                enabled = name.isNotBlank(),
+                colors  = androidx.compose.material3.ButtonDefaults.textButtonColors(
+                    contentColor = colors.accentTabata,
+                ),
+            ) { Text("Salva", style = typography.titleMedium) }
+        },
+        dismissButton = {
+            androidx.compose.material3.TextButton(onClick = onDismiss) {
+                Text("Annulla", color = colors.textSecondary)
+            }
+        },
+    )
 }

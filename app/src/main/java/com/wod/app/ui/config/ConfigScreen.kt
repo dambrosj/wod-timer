@@ -20,6 +20,9 @@ fun ConfigScreen(
     onStartWithConfig: ((TimerConfig) -> Unit)? = null,
     initialConfig: TimerConfig? = null,
     onSaveEdited: ((TimerConfig) -> Unit)? = null,
+    initialWodName: String? = null,
+    initialWodDesc: String? = null,
+    onRenameWod: ((String, String) -> Unit)? = null,
 ) {
     val start: (TimerConfig) -> Unit = { cfg -> onStartWithConfig?.invoke(cfg) ?: onStart() }
 
@@ -29,24 +32,36 @@ fun ConfigScreen(
             onStart = { start(it) },
             initialConfig = initialConfig as? TimerConfig.Tabata,
             onSaveEdited = if (onSaveEdited != null) { cfg -> onSaveEdited(cfg) } else null,
+            initialWodName = initialWodName,
+            initialWodDesc = initialWodDesc,
+            onRenameWod = onRenameWod,
         )
         TimerType.AMRAP    -> AmrapConfigScreen(
             onBack = onBack,
             onStart = { start(it) },
             initialConfig = initialConfig as? TimerConfig.Amrap,
             onSaveEdited = if (onSaveEdited != null) { cfg -> onSaveEdited(cfg) } else null,
+            initialWodName = initialWodName,
+            initialWodDesc = initialWodDesc,
+            onRenameWod = onRenameWod,
         )
         TimerType.FOR_TIME -> ForTimeConfigScreen(
             onBack = onBack,
             onStart = { start(it) },
             initialConfig = initialConfig as? TimerConfig.ForTime,
             onSaveEdited = if (onSaveEdited != null) { cfg -> onSaveEdited(cfg) } else null,
+            initialWodName = initialWodName,
+            initialWodDesc = initialWodDesc,
+            onRenameWod = onRenameWod,
         )
         TimerType.EMOM     -> EmomConfigScreen(
             onBack = onBack,
             onStart = { start(it) },
             initialConfig = initialConfig as? TimerConfig.Emom,
             onSaveEdited = if (onSaveEdited != null) { cfg -> onSaveEdited(cfg) } else null,
+            initialWodName = initialWodName,
+            initialWodDesc = initialWodDesc,
+            onRenameWod = onRenameWod,
         )
         TimerType.MIX      -> PlaceholderScreen(
             title = "MIX",

@@ -45,6 +45,9 @@ fun TabataConfigScreen(
     onStart: (TimerConfig.Tabata) -> Unit,
     initialConfig: TimerConfig.Tabata? = null,
     onSaveEdited: ((TimerConfig.Tabata) -> Unit)? = null,
+    initialWodName: String? = null,
+    initialWodDesc: String? = null,
+    onRenameWod: ((String, String) -> Unit)? = null,
 ) {
     var series by rememberSaveable { mutableIntStateOf(initialConfig?.series ?: 9) }
     var workSeconds by rememberSaveable { mutableIntStateOf(initialConfig?.workSeconds ?: 20) }
@@ -75,6 +78,9 @@ fun TabataConfigScreen(
         onSaveAsWod = if (onSaveEdited == null) { name, desc ->
             scope.launch { wodApp.savedWodRepository.saveFromConfig(name, desc, config) }
         } else null,
+        initialWodName = initialWodName,
+        initialWodDesc = initialWodDesc,
+        onRenameWod = onRenameWod,
     ) {
         Spacer(Modifier.height(WodTheme.spacing.l))
 
