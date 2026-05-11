@@ -69,7 +69,9 @@ class SavedWodRepository(private val dao: SavedWodDao) {
     private fun toDomain(entity: com.wod.app.data.db.SavedWodEntity) = entity.toDomain()
 }
 
-// T08b — five factory WODs bundled with the app.
+// T08b — factory WODs bundled with the app.
+// Personal WODs (isBuiltIn = false) are seeded with stable UUIDs so
+// insertIfAbsent skips them if already present; they survive reinstall.
 private object BuiltInWods {
 
     fun all(json: Json): List<SavedWod> {
@@ -80,6 +82,10 @@ private object BuiltInWods {
             cindy(json, now),
             fran(json, now),
             murph(json, now),
+            // ── Personal WODs (Nicola) ────────────────────────────────────────
+            wodSolito(json, now),
+            wormUp(json, now),
+            fullBodyResistanceBand(json, now),
         )
     }
 
@@ -149,6 +155,64 @@ private object BuiltInWods {
         description = "For Time (timecap 60 min): 1 miglio corsa, 100 trazioni, 200 piegamenti, 300 squat, 1 miglio corsa.",
         tags = listOf("for time", "hero", "crossfit"),
         isBuiltIn = true,
+        createdAt = now,
+    )
+
+    // ── Personal WODs ────────────────────────────────────────────────────────
+    // Stable UUIDs match the device DB so insertIfAbsent avoids duplicates.
+
+    private fun wodSolito(json: Json, now: Long) = SavedWod(
+        id = "a17bee12-1753-4e92-ad7c-4d433a7d6121",
+        name = "WOD SOLITO",
+        type = TimerType.TABATA,
+        configJson = encode(json, TimerConfig.Tabata(
+            series = 8,
+            workSeconds = 33,
+            restSeconds = 15,
+            exercises = listOf(
+                "Push-up", "Clean & Jerk", "Pull-up", "GTH kettleball",
+                "Dips", "Russian crunch dumbell", "Curl", "Core Superman hollow",
+            ),
+        )),
+        description = "3×8 — 33s lavoro / 15s riposo",
+        isBuiltIn = false,
+        createdAt = now,
+    )
+
+    private fun wormUp(json: Json, now: Long) = SavedWod(
+        id = "7ee9feed-9dff-4f09-9397-0676723182b5",
+        name = "WORM-UP",
+        type = TimerType.TABATA,
+        configJson = encode(json, TimerConfig.Tabata(
+            series = 12,
+            workSeconds = 20,
+            restSeconds = 10,
+        )),
+        description = "12×20s lavoro / 10s riposo",
+        isBuiltIn = false,
+        createdAt = now,
+    )
+
+    private fun fullBodyResistanceBand(json: Json, now: Long) = SavedWod(
+        id = "bab89276-2632-4207-8678-7e285727eec5",
+        name = "Full body resistance band",
+        type = TimerType.TABATA,
+        configJson = encode(json, TimerConfig.Tabata(
+            series = 11,
+            workSeconds = 40,
+            restSeconds = 15,
+            exercises = listOf(
+                "Thruster", "Seated row", "Facepull", "Deadlift", "Upright row",
+                "Pull aparts", "Squats", "X band shuffle", "Curl sx", "Curl dx",
+                "Tricep extension",
+            ),
+            repeat = com.wod.app.domain.model.WodRepeatConfig(
+                wodRounds = 3,
+                restBetweenRoundsSeconds = 145,
+            ),
+        )),
+        description = "3×11 — 40s lavoro / 15s riposo / 2:25 riposo tra i round",
+        isBuiltIn = false,
         createdAt = now,
     )
 }
