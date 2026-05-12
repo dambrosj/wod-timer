@@ -1,16 +1,18 @@
 package com.wod.app.ui
 
+import android.app.Activity
+import android.content.pm.ActivityInfo
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -43,6 +45,17 @@ fun WodNavGraph(
     val scope = rememberCoroutineScope()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
+
+    // Landscape only during timer and completion; all other screens are portrait-locked.
+    val activity = LocalContext.current as? Activity
+    LaunchedEffect(currentRoute) {
+        val allowLandscape = currentRoute?.startsWith("timer/") == true
+                          || currentRoute == Routes.COMPLETION
+        activity?.requestedOrientation = if (allowLandscape)
+            ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        else
+            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+    }
 
     fun closeDrawer() = scope.launch { drawerState.close() }
 
