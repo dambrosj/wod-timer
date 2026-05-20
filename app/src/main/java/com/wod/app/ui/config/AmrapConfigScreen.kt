@@ -18,7 +18,7 @@ import com.wod.app.WodApp
 import com.wod.app.domain.engine.AmrapEngine
 import com.wod.app.domain.model.TimerConfig
 import com.wod.app.domain.model.WodRepeatConfig
-import com.wod.app.ui.components.ExercisesBlock
+import com.wod.app.ui.components.ExerciseSequenceBlock
 import com.wod.app.ui.components.TimePicker
 import com.wod.app.ui.components.WodRepeatBlock
 import com.wod.app.ui.theme.WodPreview
@@ -44,11 +44,15 @@ fun AmrapConfigScreen(
     var durationSeconds by rememberSaveable { mutableIntStateOf(initialConfig?.durationSeconds ?: (8 * 60)) }
     var repeat by rememberSaveable(stateSaver = WodRepeatConfigSaver) { mutableStateOf(initialConfig?.repeat ?: WodRepeatConfig()) }
     var exercises by rememberSaveable(stateSaver = StringListSaver) { mutableStateOf(initialConfig?.exercises ?: emptyList()) }
+    var exerciseReps by rememberSaveable(stateSaver = IntListSaver) { mutableStateOf(initialConfig?.exerciseReps ?: emptyList()) }
+    var exerciseMinReps by rememberSaveable(stateSaver = IntListSaver) { mutableStateOf(initialConfig?.exerciseMinReps ?: emptyList()) }
     var notes by rememberSaveable { mutableStateOf(initialConfig?.notes ?: "") }
 
     val config = TimerConfig.Amrap(
         durationSeconds = durationSeconds,
         exercises = exercises,
+        exerciseReps = exerciseReps,
+        exerciseMinReps = exerciseMinReps,
         repeat = repeat,
         notes = notes,
     )
@@ -85,10 +89,13 @@ fun AmrapConfigScreen(
 
         Spacer(Modifier.height(WodTheme.spacing.l))
 
-        ExercisesBlock(
+        ExerciseSequenceBlock(
             exercises = exercises,
-            seriesCount = 1,
+            exerciseReps = exerciseReps,
+            exerciseMinReps = exerciseMinReps,
             onExercisesChange = { exercises = it },
+            onRepsChange = { exerciseReps = it },
+            onMinRepsChange = { exerciseMinReps = it },
         )
 
         Spacer(Modifier.height(WodTheme.spacing.l))

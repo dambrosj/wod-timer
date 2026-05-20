@@ -20,7 +20,7 @@ import com.wod.app.WodApp
 import com.wod.app.domain.engine.ForTimeEngine
 import com.wod.app.domain.model.TimerConfig
 import com.wod.app.domain.model.WodRepeatConfig
-import com.wod.app.ui.components.ExercisesBlock
+import com.wod.app.ui.components.ExerciseSequenceBlock
 import com.wod.app.ui.components.NumberPicker
 import com.wod.app.ui.components.TimePicker
 import com.wod.app.ui.components.WodRepeatBlock
@@ -48,12 +48,16 @@ fun ForTimeConfigScreen(
     var rounds by rememberSaveable { mutableIntStateOf(initialConfig?.rounds ?: 1) }
     var repeat by rememberSaveable(stateSaver = WodRepeatConfigSaver) { mutableStateOf(initialConfig?.repeat ?: WodRepeatConfig()) }
     var exercises by rememberSaveable(stateSaver = StringListSaver) { mutableStateOf(initialConfig?.exercises ?: emptyList()) }
+    var exerciseReps by rememberSaveable(stateSaver = IntListSaver) { mutableStateOf(initialConfig?.exerciseReps ?: emptyList()) }
+    var exerciseMinReps by rememberSaveable(stateSaver = IntListSaver) { mutableStateOf(initialConfig?.exerciseMinReps ?: emptyList()) }
     var notes by rememberSaveable { mutableStateOf(initialConfig?.notes ?: "") }
 
     val config = TimerConfig.ForTime(
         timecapSeconds = timecapSeconds,
         rounds = rounds,
         exercises = exercises,
+        exerciseReps = exerciseReps,
+        exerciseMinReps = exerciseMinReps,
         repeat = repeat,
         notes = notes,
     )
@@ -96,10 +100,13 @@ fun ForTimeConfigScreen(
 
         Spacer(Modifier.height(WodTheme.spacing.l))
 
-        ExercisesBlock(
+        ExerciseSequenceBlock(
             exercises = exercises,
-            seriesCount = rounds.coerceAtLeast(1),
+            exerciseReps = exerciseReps,
+            exerciseMinReps = exerciseMinReps,
             onExercisesChange = { exercises = it },
+            onRepsChange = { exerciseReps = it },
+            onMinRepsChange = { exerciseMinReps = it },
         )
 
         Spacer(Modifier.height(WodTheme.spacing.l))

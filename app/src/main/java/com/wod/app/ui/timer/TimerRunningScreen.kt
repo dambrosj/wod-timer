@@ -17,6 +17,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ButtonDefaults
@@ -24,14 +28,21 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -43,10 +54,12 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.wod.app.domain.model.PhaseType
+import com.wod.app.domain.model.TimerConfig
 import com.wod.app.domain.model.TimerPhase
 import com.wod.app.domain.model.TimerType
 import com.wod.app.ui.theme.WodColors
 import com.wod.app.ui.theme.WodTheme
+import kotlinx.coroutines.launch
 
 /**
  * Full running-timer screen (T29, T31-T33, T36, T36b-c).
@@ -54,12 +67,13 @@ import com.wod.app.ui.theme.WodTheme
  * Features:
  *  - Starts ForegroundService on first composition (T36)
  *  - Stops service on back/complete (ViewModel.onCleared + BackHandler)
- *  - Tap anywhere → pause/resume (T31)
+ *  - Tap anywhere → pause/resume (T31) — only on page 0 (timer ring page)
  *  - Long-press anywhere → skip phase with haptic feedback (T31)
  *  - Phase color transitions: work=green, rest=purple, wod_rest=orange (T33)
  *  - CircularTimerCanvas with animated arc (T28)
  *  - Round labels and exercise labels (T33b, T33c)
  *  - Portrait: stacked column; Landscape: ring left + info+buttons right (T36b)
+ *  - AMRAP/FOR TIME: swipe-left page 2 shows exercise list with reps counters (T38)
  */
 @Composable
 fun TimerRunningScreen(
@@ -93,6 +107,59 @@ fun TimerRunningScreen(
     // Keep latest phase in a ref that's safe to read from pointerInput lambdas
     val latestPhase by rememberUpdatedState(phase)
 
+    // ── Exercise-list page state (AMRAP / FOR TIME only) ───────────────────────
+    val hasExercisePage = type == TimerType.AMRAP || type == TimerType.FOR_TIME
+    val pagerState = rememberPagerState(pageCount = { if (hasExercisePage) 2 else 1 })
+    val latestPagerPage by rememberUpdatedState(pagerState.currentPage)
+
+    var exerciseRepsDone by remember { mutableStateOf(emptyList<Int>()) }
+    var exerciseChecked by remember { mutableStateOf(emptyList<Boolean>()) }
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    // Helper: check whether the minReps constraint allows pausing right now.
+    fun canPauseNow(): Boolean {
+        if (!hasExercisePage) return true
+        val config = vm.timerConfig ?: return true
+        val minReps = when (config) {
+            is TimerConfig.Amrap   -> config.exerciseMinReps
+            is TimerConfig.ForTime -> config.exerciseMinReps
+            else                   -> return true
+        }
+        // Find the first unchecked exercise — that's the "current" one.
+        val idx = exerciseChecked.indexOfFirst { !it }
+        if (idx < 0) return true  // all checked → no constraint
+        val needed = minReps.getOrElse(idx) { 0 }
+        if (needed == 0) return true
+        val done = exerciseRepsDone.getOrElse(idx) { 0 }
+        return done >= needed
+    }
+
+    // Helper: name of the exercise blocking pause (for snackbar message).
+    fun blockingExerciseName(): String {
+        val config = vm.timerConfig ?: return ""
+        val exercises = when (config) {
+            is TimerConfig.Amrap   -> config.exercises
+            is TimerConfig.ForTime -> config.exercises
+            else                   -> emptyList()
+        }
+        val idx = exerciseChecked.indexOfFirst { !it }.coerceAtLeast(0)
+        return exercises.getOrElse(idx) { "Esercizio ${idx + 1}" }
+            .ifBlank { "Esercizio ${idx + 1}" }
+    }
+
+    fun blockingMinReps(): Int {
+        val config = vm.timerConfig ?: return 0
+        val minReps = when (config) {
+            is TimerConfig.Amrap   -> config.exerciseMinReps
+            is TimerConfig.ForTime -> config.exerciseMinReps
+            else                   -> emptyList()
+        }
+        val idx = exerciseChecked.indexOfFirst { !it }.coerceAtLeast(0)
+        return minReps.getOrElse(idx) { 0 }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -101,7 +168,21 @@ fun TimerRunningScreen(
                 detectTapGestures(
                     onTap = {
                         latestPhase?.let { p ->
-                            if (p.isPaused) vm.resume() else vm.pause()
+                            // Tapping on page 1 (exercise list) does not pause/resume.
+                            if (latestPagerPage != 0) return@let
+                            if (p.isPaused) {
+                                vm.resume()
+                            } else {
+                                if (canPauseNow()) {
+                                    vm.pause()
+                                } else {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            "Completa almeno ${blockingMinReps()} rep di ${blockingExerciseName()} prima di mettere in pausa"
+                                        )
+                                    }
+                                }
+                            }
                         }
                     },
                     onLongPress = {
@@ -120,10 +201,65 @@ fun TimerRunningScreen(
             val p = phase!!
             val phaseColor = phaseColor(p, colors)
 
-            if (isLandscape) {
-                LandscapeTimerLayout(p, phaseColor, vm, colors)
+            // Retrieve config for the exercise-list page
+            val exercisesForPage: List<String>
+            val exerciseRepsForPage: List<Int>
+            val exerciseMinRepsForPage: List<Int>
+            when (val cfg = vm.timerConfig) {
+                is TimerConfig.Amrap   -> {
+                    exercisesForPage = cfg.exercises
+                    exerciseRepsForPage = cfg.exerciseReps
+                    exerciseMinRepsForPage = cfg.exerciseMinReps
+                }
+                is TimerConfig.ForTime -> {
+                    exercisesForPage = cfg.exercises
+                    exerciseRepsForPage = cfg.exerciseReps
+                    exerciseMinRepsForPage = cfg.exerciseMinReps
+                }
+                else -> {
+                    exercisesForPage = emptyList()
+                    exerciseRepsForPage = emptyList()
+                    exerciseMinRepsForPage = emptyList()
+                }
+            }
+
+            if (hasExercisePage) {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier.weight(1f),
+                        userScrollEnabled = true,
+                    ) { page ->
+                        when (page) {
+                            0 -> if (isLandscape) {
+                                LandscapeTimerLayout(p, phaseColor, vm, colors)
+                            } else {
+                                PortraitTimerLayout(p, phaseColor, colors)
+                            }
+
+                            else -> ExerciseListPage(
+                                exercises = exercisesForPage,
+                                exerciseReps = exerciseRepsForPage,
+                                exerciseMinReps = exerciseMinRepsForPage,
+                                repsDone = exerciseRepsDone,
+                                checked = exerciseChecked,
+                                phase = p,
+                                phaseColor = phaseColor,
+                                onRepsDoneChange = { exerciseRepsDone = it },
+                                onCheckedChange = { exerciseChecked = it },
+                            )
+                        }
+                    }
+
+                    // Page indicator dots
+                    PageDots(pagerState = pagerState, phaseColor = phaseColor, colors = colors)
+                }
             } else {
-                PortraitTimerLayout(p, phaseColor, colors)
+                if (isLandscape) {
+                    LandscapeTimerLayout(p, phaseColor, vm, colors)
+                } else {
+                    PortraitTimerLayout(p, phaseColor, colors)
+                }
             }
         }
 
@@ -139,6 +275,40 @@ fun TimerRunningScreen(
                 contentDescription = "Indietro",
                 tint = colors.iconDefault,
                 modifier = Modifier.size(24.dp),
+            )
+        }
+
+        // Snackbar for minReps pause block
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
+    }
+}
+
+// ── Page indicator dots ───────────────────────────────────────────────────────
+
+@Composable
+private fun PageDots(
+    pagerState: PagerState,
+    phaseColor: Color,
+    colors: WodColors,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 8.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        repeat(pagerState.pageCount) { i ->
+            val selected = pagerState.currentPage == i
+            Box(
+                modifier = Modifier
+                    .padding(horizontal = 4.dp)
+                    .size(if (selected) 8.dp else 6.dp)
+                    .clip(CircleShape)
+                    .background(if (selected) phaseColor else colors.textDisabled),
             )
         }
     }
@@ -363,4 +533,3 @@ private fun buildSubLabel(phase: TimerPhase): String? = when (phase.phase) {
     // REST: exercise is now shown large — no duplicate subLabel needed.
     else -> null
 }
-

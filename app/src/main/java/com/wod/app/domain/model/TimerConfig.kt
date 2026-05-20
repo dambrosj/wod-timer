@@ -33,6 +33,10 @@ sealed class TimerConfig {
     data class Amrap(
         val durationSeconds: Int,
         val exercises: List<String> = emptyList(),
+        /** Target reps per exercise (parallel to [exercises]; 0 = not set). */
+        val exerciseReps: List<Int> = emptyList(),
+        /** Minimum reps that must be logged before the athlete is allowed to pause. 0 = no constraint. */
+        val exerciseMinReps: List<Int> = emptyList(),
         override val notes: String = "",
         override val repeat: WodRepeatConfig = WodRepeatConfig(),
     ) : TimerConfig()
@@ -42,6 +46,10 @@ sealed class TimerConfig {
         val timecapSeconds: Int,
         val rounds: Int = 1,
         val exercises: List<String> = emptyList(),
+        /** Target reps per exercise (parallel to [exercises]; 0 = not set). */
+        val exerciseReps: List<Int> = emptyList(),
+        /** Minimum reps that must be logged before the athlete is allowed to pause. 0 = no constraint. */
+        val exerciseMinReps: List<Int> = emptyList(),
         override val notes: String = "",
         override val repeat: WodRepeatConfig = WodRepeatConfig(),
     ) : TimerConfig()

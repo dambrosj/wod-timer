@@ -25,6 +25,9 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
     /** Live phase — null until the first engine tick arrives. */
     val phase: StateFlow<TimerPhase?> = app.activePhase
 
+    /** Config that launched this timer session — needed by the exercise-list swipe page. */
+    val timerConfig: TimerConfig? get() = app.pendingConfig
+
     /** Fires once when the engine finishes all phases. */
     val isCompleted: SharedFlow<Unit> = app.timerCompleted
 

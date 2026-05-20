@@ -37,3 +37,11 @@ val CustomIntervalListSaver: Saver<List<CustomInterval>, String> = Saver(
     save    = { Json.encodeToString(it) },
     restore = { Json.decodeFromString(it) },
 )
+
+/**
+ * Allows `List<Int>` (exercise reps, min-reps, …) to survive Activity recreation.
+ */
+val IntListSaver: Saver<List<Int>, String> = Saver(
+    save    = { it.joinToString(",") },
+    restore = { s -> if (s.isEmpty()) emptyList() else s.split(",").map { it.toInt() } },
+)
