@@ -1,6 +1,7 @@
 package com.wod.app.ui.config
 
 import androidx.compose.runtime.saveable.Saver
+import com.wod.app.domain.model.CustomInterval
 import com.wod.app.domain.model.WodRepeatConfig
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
@@ -27,4 +28,12 @@ val WodRepeatConfigSaver: Saver<WodRepeatConfig, String> = Saver(
 val StringListSaver: Saver<List<String>, String> = Saver(
     save    = { Json.encodeToString(ListSerializer(String.serializer()), it) },
     restore = { Json.decodeFromString(ListSerializer(String.serializer()), it) },
+)
+
+/**
+ * Allows `List<CustomInterval>` (CUSTOM config screen) to survive Activity recreation.
+ */
+val CustomIntervalListSaver: Saver<List<CustomInterval>, String> = Saver(
+    save    = { Json.encodeToString(it) },
+    restore = { Json.decodeFromString(it) },
 )

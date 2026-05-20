@@ -25,6 +25,7 @@ data class WodColors(
     val accentEmom: Color,
     val accentTabata: Color,
     val accentMix: Color,
+    val accentCustom: Color,
     val phaseWork: Color,
     val phaseRest: Color,
     val phaseWodRest: Color,
@@ -50,6 +51,7 @@ val WodDarkColors = WodColors(
     accentEmom      = Color(0xFFF5A623),   // ambra/oro
     accentTabata    = Color(0xFF4361EE),   // indaco elettrico
     accentMix       = Color(0xFF5C677D),   // slate blu (I MIEI WOD)
+    accentCustom    = Color(0xFF3DBD8E),   // teal-green (brand/custom)
     // ── Phase colors ──────────────────────────────────────────────────────
     phaseWork       = Color(0xFF4361EE),   // indaco (matching Tabata)
     phaseRest       = Color(0xFF0FA3B1),   // cyan (matching ForTime)
@@ -76,6 +78,7 @@ val WodLightColors = WodColors(
     accentEmom      = Color(0xFFBF7E10),
     accentTabata    = Color(0xFF2D47CC),
     accentMix       = Color(0xFF4A5568),
+    accentCustom    = Color(0xFF29926A),   // teal-green (scurito per luce)
     // ── Phase colors ──────────────────────────────────────────────────────
     phaseWork       = Color(0xFF2D47CC),
     phaseRest       = Color(0xFF0A7985),

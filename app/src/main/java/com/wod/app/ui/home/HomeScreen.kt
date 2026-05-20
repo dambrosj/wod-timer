@@ -34,8 +34,8 @@ import com.wod.app.ui.theme.WodTheme
 /**
  * Home screen: 4 timer-type pill buttons + "I miei WOD" shortcut.
  *
- * Portrait  → 2+2+1 grid: [AMRAP|FOR TIME] / [EMOM|TABATA] / [I MIEI WOD].
- * Landscape → single row of 4 + [I MIEI WOD] full-width below.
+ * Portrait  → 2+2+2 grid: [AMRAP|FOR TIME] / [EMOM|TABATA] / [CUSTOM|I MIEI WOD].
+ * Landscape → row of 4 + [CUSTOM|I MIEI WOD] below.
  * Hamburger → [onMenuClick].
  */
 @Composable
@@ -131,7 +131,7 @@ fun HomeScreen(
     }
 }
 
-/** Portrait: [AMRAP|FOR TIME] / [EMOM|TABATA] / [I MIEI WOD full-width] */
+/** Portrait: [AMRAP|FOR TIME] / [EMOM|TABATA] / [CUSTOM|I MIEI WOD] */
 @Composable
 private fun PortraitButtonColumn(
     onTimerTypeClick: (TimerType) -> Unit,
@@ -162,11 +162,21 @@ private fun PortraitButtonColumn(
                 TimerTypeButton("TABATA", colors.accentTabata) { onTimerTypeClick(TimerType.TABATA) }
             }
         }
-        TimerTypeButton("I MIEI WOD", colors.accentMix) { onMyWodsClick() }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(gap),
+        ) {
+            Box(Modifier.weight(1f)) {
+                TimerTypeButton("CUSTOM", colors.accentCustom) { onTimerTypeClick(TimerType.CUSTOM) }
+            }
+            Box(Modifier.weight(1f)) {
+                TimerTypeButton("I MIEI WOD", colors.accentMix) { onMyWodsClick() }
+            }
+        }
     }
 }
 
-/** Landscape: [AMRAP|FOR TIME|EMOM|TABATA] / [I MIEI WOD full-width] */
+/** Landscape: [AMRAP|FOR TIME|EMOM|TABATA] / [CUSTOM|I MIEI WOD] */
 @Composable
 private fun LandscapeButtonGrid(
     onTimerTypeClick: (TimerType) -> Unit,
@@ -192,7 +202,17 @@ private fun LandscapeButtonGrid(
                 TimerTypeButton("TABATA",   colors.accentTabata)  { onTimerTypeClick(TimerType.TABATA) }
             }
         }
-        TimerTypeButton("I MIEI WOD", colors.accentMix) { onMyWodsClick() }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(gap),
+        ) {
+            Box(Modifier.weight(1f)) {
+                TimerTypeButton("CUSTOM", colors.accentCustom) { onTimerTypeClick(TimerType.CUSTOM) }
+            }
+            Box(Modifier.weight(1f)) {
+                TimerTypeButton("I MIEI WOD", colors.accentMix) { onMyWodsClick() }
+            }
+        }
     }
 }
 

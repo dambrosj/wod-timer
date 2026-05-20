@@ -157,11 +157,12 @@ private fun PortraitTimerLayout(phase: TimerPhase, phaseColor: Color, colors: Wo
     ) {
         Spacer(Modifier.height(56.dp)) // space for back button row
 
-        // Phase label (Lavoro / Riposo / Riposo WOD)
+        // Phase label. In CUSTOM WORK the label IS the exercise name — show uppercase + white.
+        val isCustomWork = phase.phase == PhaseType.WORK && phase.currentExercise == null
         Text(
-            text = phase.label,
+            text = if (isCustomWork) phase.label.uppercase() else phase.label,
             style = WodTheme.typography.headlineLarge,
-            color = phaseColor,
+            color = if (isCustomWork) Color.White else phaseColor,
         )
 
         Spacer(Modifier.height(4.dp))
@@ -186,20 +187,22 @@ private fun PortraitTimerLayout(phase: TimerPhase, phaseColor: Color, colors: Wo
 
         Spacer(Modifier.height(12.dp))
 
-        // Exercise label: current during WORK; upcoming preview during COUNTDOWN/REST/WOD_REST
+        // Exercise label: current during WORK; upcoming preview during COUNTDOWN/REST/WOD_REST.
+        // For CUSTOM WORK: currentExercise is null (label IS the name) so we fall back to
+        // nextExercise shown in secondary color — same size/position as during REST.
         val exerciseToShow = when (phase.phase) {
-            PhaseType.WORK      -> phase.currentExercise
+            PhaseType.WORK      -> phase.currentExercise ?: phase.nextExercise
             PhaseType.COUNTDOWN -> phase.currentExercise
             PhaseType.REST      -> phase.nextExercise
             PhaseType.WOD_REST  -> phase.nextExercise
             else                -> null
         }
+        val exerciseIsCurrent = phase.phase == PhaseType.WORK && phase.currentExercise != null
         if (exerciseToShow != null) {
             Text(
                 text = exerciseToShow.uppercase(),
                 style = WodTheme.typography.exerciseLarge,
-                color = if (phase.phase == PhaseType.WORK) colors.textPrimary
-                        else colors.textSecondary,
+                color = if (exerciseIsCurrent) colors.textPrimary else colors.textSecondary,
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(8.dp))
@@ -270,7 +273,12 @@ private fun LandscapeTimerLayout(
             horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.Center,
         ) {
-            Text(phase.label, style = WodTheme.typography.headlineMedium, color = phaseColor)
+            val isCustomWork = phase.phase == PhaseType.WORK && phase.currentExercise == null
+            Text(
+                text = if (isCustomWork) phase.label.uppercase() else phase.label,
+                style = WodTheme.typography.headlineMedium,
+                color = if (isCustomWork) Color.White else phaseColor,
+            )
 
             if (phase.totalRounds > 1) {
                 Text(
@@ -289,19 +297,19 @@ private fun LandscapeTimerLayout(
             }
 
             val exerciseToShow = when (phase.phase) {
-                PhaseType.WORK      -> phase.currentExercise
+                PhaseType.WORK      -> phase.currentExercise ?: phase.nextExercise
                 PhaseType.COUNTDOWN -> phase.currentExercise
                 PhaseType.REST      -> phase.nextExercise
                 PhaseType.WOD_REST  -> phase.nextExercise
                 else                -> null
             }
+            val exerciseIsCurrent = phase.phase == PhaseType.WORK && phase.currentExercise != null
             if (exerciseToShow != null) {
                 Spacer(Modifier.height(4.dp))
                 Text(
                     exerciseToShow.uppercase(),
                     style = WodTheme.typography.exerciseLarge,
-                    color = if (phase.phase == PhaseType.WORK) colors.textPrimary
-                            else colors.textSecondary,
+                    color = if (exerciseIsCurrent) colors.textPrimary else colors.textSecondary,
                 )
             }
 

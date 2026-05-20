@@ -1,3 +1,3 @@
 package com.wod.app.domain.model
 
-enum class TimerType { AMRAP, FOR_TIME, EMOM, TABATA, MIX }
+enum class TimerType { AMRAP, FOR_TIME, EMOM, TABATA, MIX, CUSTOM }

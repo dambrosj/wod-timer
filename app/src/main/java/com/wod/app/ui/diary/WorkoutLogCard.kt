@@ -93,6 +93,7 @@ internal fun TimerType.displayName(): String = when (this) {
     TimerType.EMOM     -> "EMOM"
     TimerType.TABATA   -> "TABATA"
     TimerType.MIX      -> "MIX"
+    TimerType.CUSTOM   -> "CUSTOM"
 }
 
 internal fun TimerType.accentColor(colors: WodColors) = when (this) {
@@ -101,4 +102,5 @@ internal fun TimerType.accentColor(colors: WodColors) = when (this) {
     TimerType.EMOM     -> colors.accentEmom
     TimerType.TABATA   -> colors.accentTabata
     TimerType.MIX      -> colors.accentMix
+    TimerType.CUSTOM   -> colors.accentCustom
 }

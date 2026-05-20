@@ -68,6 +68,15 @@ fun ConfigScreen(
             onBack = onBack,
             body = "MIX (Premium) — configura i segmenti (T27).",
         )
+        TimerType.CUSTOM   -> CustomConfigScreen(
+            onBack = onBack,
+            onStart = { start(it) },
+            initialConfig = initialConfig as? TimerConfig.Custom,
+            onSaveEdited = if (onSaveEdited != null) { cfg -> onSaveEdited(cfg) } else null,
+            initialWodName = initialWodName,
+            initialWodDesc = initialWodDesc,
+            onRenameWod = onRenameWod,
+        )
     }
 }
 

@@ -15,6 +15,7 @@ import com.wod.app.MainActivity
 import com.wod.app.R
 import com.wod.app.WodApp
 import com.wod.app.domain.engine.AmrapEngine
+import com.wod.app.domain.engine.CustomEngine
 import com.wod.app.domain.engine.EmomEngine
 import com.wod.app.domain.engine.ForTimeEngine
 import com.wod.app.domain.engine.TabataEngine
@@ -84,6 +85,7 @@ class TimerForegroundService : Service() {
             CONFIG_AMRAP    -> AmrapEngine(Json.decodeFromString<TimerConfig.Amrap>(configJson), serviceScope)
             CONFIG_FOR_TIME -> ForTimeEngine(Json.decodeFromString<TimerConfig.ForTime>(configJson), serviceScope)
             CONFIG_EMOM     -> EmomEngine(Json.decodeFromString<TimerConfig.Emom>(configJson), serviceScope)
+            CONFIG_CUSTOM   -> CustomEngine(Json.decodeFromString<TimerConfig.Custom>(configJson), serviceScope)
             else -> return
         }
 
@@ -110,6 +112,7 @@ class TimerForegroundService : Service() {
                         CONFIG_AMRAP    -> TimerType.AMRAP
                         CONFIG_FOR_TIME -> TimerType.FOR_TIME
                         CONFIG_EMOM     -> TimerType.EMOM
+                        CONFIG_CUSTOM   -> TimerType.CUSTOM
                         else            -> TimerType.TABATA
                     }
                     app.pendingWorkoutLog = WorkoutLog(
@@ -239,6 +242,7 @@ class TimerForegroundService : Service() {
         const val CONFIG_AMRAP      = "AMRAP"
         const val CONFIG_FOR_TIME   = "FOR_TIME"
         const val CONFIG_EMOM       = "EMOM"
+        const val CONFIG_CUSTOM     = "CUSTOM"
 
         private const val CHANNEL_ID      = "wod_timer"
         private const val NOTIF_ID        = 1001
@@ -256,6 +260,9 @@ class TimerForegroundService : Service() {
 
         fun startEmom(context: Context, config: TimerConfig.Emom) =
             startConfig(context, Json.encodeToString(config), CONFIG_EMOM)
+
+        fun startCustom(context: Context, config: TimerConfig.Custom) =
+            startConfig(context, Json.encodeToString(config), CONFIG_CUSTOM)
 
         private fun startConfig(context: Context, json: String, type: String) {
             val intent = Intent(context, TimerForegroundService::class.java).apply {

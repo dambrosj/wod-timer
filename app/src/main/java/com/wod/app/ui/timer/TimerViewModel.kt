@@ -36,6 +36,7 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
             is TimerConfig.Amrap    -> TimerForegroundService.startAmrap(app, config)
             is TimerConfig.ForTime  -> TimerForegroundService.startForTime(app, config)
             is TimerConfig.Emom     -> TimerForegroundService.startEmom(app, config)
+            is TimerConfig.Custom   -> TimerForegroundService.startCustom(app, config)
             is TimerConfig.Mix      -> { /* MIX engine not yet implemented (T27+) */ }
         }
     }

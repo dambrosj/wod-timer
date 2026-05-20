@@ -72,6 +72,18 @@ sealed class TimerConfig {
         override val notes: String = "",
         override val repeat: WodRepeatConfig = WodRepeatConfig(),
     ) : TimerConfig()
+
+    /**
+     * CUSTOM timer: a free-form ordered list of named intervals, each with its own duration.
+     * Interval names are whatever the athlete wants ("PUSHUP", "RIPOSO", "CURL", …).
+     * Optional WOD repetition via [repeat] (same mechanics as every other type).
+     */
+    @Serializable
+    data class Custom(
+        val intervals: List<CustomInterval> = emptyList(),
+        override val notes: String = "",
+        override val repeat: WodRepeatConfig = WodRepeatConfig(),
+    ) : TimerConfig()
 }
 
 @Serializable
@@ -89,4 +101,16 @@ data class TabataSet(
 data class MixSegment(
     val type: TimerType,
     val configJson: String,
+)
+
+/**
+ * One named step inside a CUSTOM timer.
+ *
+ * [name] is whatever the athlete calls it ("PUSHUP", "RIPOSO", "CURL", …).
+ * [durationSeconds] is the length of that step.
+ */
+@Serializable
+data class CustomInterval(
+    val name: String = "",
+    val durationSeconds: Int = 30,
 )

@@ -3,6 +3,7 @@ package com.wod.app.data.repository
 import com.wod.app.data.db.SavedWodDao
 import com.wod.app.data.db.toDomain
 import com.wod.app.data.db.toEntity
+import com.wod.app.domain.model.CustomInterval
 import com.wod.app.domain.model.SavedWod
 import com.wod.app.domain.model.TimerConfig
 import com.wod.app.domain.model.TimerType
@@ -34,6 +35,7 @@ class SavedWodRepository(private val dao: SavedWodDao) {
             is TimerConfig.ForTime -> TimerType.FOR_TIME
             is TimerConfig.Emom    -> TimerType.EMOM
             is TimerConfig.Mix     -> TimerType.MIX
+            is TimerConfig.Custom  -> TimerType.CUSTOM
         }
         save(SavedWod(
             id          = java.util.UUID.randomUUID().toString(),
@@ -86,6 +88,7 @@ private object BuiltInWods {
             wodSolito(json, now),
             wormUp(json, now),
             fullBodyResistanceBand(json, now),
+            defaticamentoStretching(json, now),
         )
     }
 
@@ -176,6 +179,7 @@ private object BuiltInWods {
         )),
         description = "3×8 — 33s lavoro / 15s riposo",
         isBuiltIn = false,
+        isFavourite = true,
         createdAt = now,
     )
 
@@ -190,6 +194,7 @@ private object BuiltInWods {
         )),
         description = "12×20s lavoro / 10s riposo",
         isBuiltIn = false,
+        isFavourite = true,
         createdAt = now,
     )
 
@@ -213,6 +218,50 @@ private object BuiltInWods {
         )),
         description = "3×11 — 40s lavoro / 15s riposo / 2:25 riposo tra i round",
         isBuiltIn = false,
+        isFavourite = true,
+        createdAt = now,
+    )
+
+    private fun defaticamentoStretching(json: Json, now: Long) = SavedWod(
+        id = "4574c156-3a8e-4781-b367-78cd6a5af0a3",
+        name = "D & S",
+        type = TimerType.CUSTOM,
+        configJson = encode(json, TimerConfig.Custom(
+            intervals = listOf(
+                CustomInterval("Mobilizzazione colonna",          30),
+                CustomInterval("Gamba tallone DX",                30),
+                CustomInterval("Gamba tallone SX",                30),
+                CustomInterval("Divaricata frontale",             20),
+                CustomInterval("Divaricata frontale DX",          30),
+                CustomInterval("Divaricata frontale SX",          30),
+                CustomInterval("Mobilizzazione colonna",          20),
+                CustomInterval("Incrocio Gamba SX",               30),
+                CustomInterval("Incrocio Gamba DX",               30),
+                CustomInterval("Mobilizzazione colonna",          20),
+                CustomInterval("Allungamento Laterale Braccio DX", 30),
+                CustomInterval("Allungamento Laterale Braccio SX", 30),
+                CustomInterval("Mano su pianta del piede DX",     20),
+                CustomInterval("Mano su pianta del piede SX",     20),
+                CustomInterval("Mobilizzazione colonna",          20),
+                CustomInterval("Spalla DX",                       20),
+                CustomInterval("Spalla SX",                       20),
+                CustomInterval("Pettorale DX",                    20),
+                CustomInterval("Pettorale SX",                    20),
+                CustomInterval("Frontale mani a terra",           30),
+                CustomInterval("Frontale a V",                    40),
+                CustomInterval("Mobilizzazione colonna a terra",  30),
+                CustomInterval("Allungamento schiena a terra",    30),
+                CustomInterval("Allungamento in affondo DX",      30),
+                CustomInterval("Allungamento in affondo SX",      30),
+                CustomInterval("Glutei back SX",                  30),
+                CustomInterval("Glutei back DX",                  30),
+                CustomInterval("Glutei front SX",                 30),
+                CustomInterval("Glutei front DX",                 30),
+            ),
+        )),
+        description = "Defaticamento & Streaching",
+        isBuiltIn = false,
+        isFavourite = true,
         createdAt = now,
     )
 }
