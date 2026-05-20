@@ -186,18 +186,20 @@ private fun PortraitTimerLayout(phase: TimerPhase, phaseColor: Color, colors: Wo
 
         Spacer(Modifier.height(12.dp))
 
-        // Exercise label: shown during WORK (current) and COUNTDOWN (upcoming preview)
+        // Exercise label: current during WORK; upcoming preview during COUNTDOWN/REST/WOD_REST
         val exerciseToShow = when (phase.phase) {
             PhaseType.WORK      -> phase.currentExercise
             PhaseType.COUNTDOWN -> phase.currentExercise
+            PhaseType.REST      -> phase.nextExercise
+            PhaseType.WOD_REST  -> phase.nextExercise
             else                -> null
         }
         if (exerciseToShow != null) {
             Text(
                 text = exerciseToShow.uppercase(),
                 style = WodTheme.typography.exerciseLarge,
-                color = if (phase.phase == PhaseType.COUNTDOWN) colors.textSecondary
-                        else colors.textPrimary,
+                color = if (phase.phase == PhaseType.WORK) colors.textPrimary
+                        else colors.textSecondary,
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(8.dp))
@@ -289,6 +291,8 @@ private fun LandscapeTimerLayout(
             val exerciseToShow = when (phase.phase) {
                 PhaseType.WORK      -> phase.currentExercise
                 PhaseType.COUNTDOWN -> phase.currentExercise
+                PhaseType.REST      -> phase.nextExercise
+                PhaseType.WOD_REST  -> phase.nextExercise
                 else                -> null
             }
             if (exerciseToShow != null) {
@@ -296,8 +300,8 @@ private fun LandscapeTimerLayout(
                 Text(
                     exerciseToShow.uppercase(),
                     style = WodTheme.typography.exerciseLarge,
-                    color = if (phase.phase == PhaseType.COUNTDOWN) colors.textSecondary
-                            else colors.textPrimary,
+                    color = if (phase.phase == PhaseType.WORK) colors.textPrimary
+                            else colors.textSecondary,
                 )
             }
 
@@ -343,19 +347,12 @@ private fun phaseColor(phase: TimerPhase, colors: WodColors): Color = when {
 
 private fun buildSubLabel(phase: TimerPhase): String? = when (phase.phase) {
     PhaseType.WOD_REST -> {
-        // Combine round info + next exercise on the same line during the inter-round rest.
-        buildString {
-            if (phase.totalWodRounds > 1)
-                append("Prossimo: Round ${phase.currentWodRound + 1}/${phase.totalWodRounds}")
-            if (phase.nextExercise != null) {
-                if (isNotEmpty()) append("  ·  ")
-                append(phase.nextExercise)
-            }
-        }.ifEmpty { null }
+        // Exercise is shown large — only keep the upcoming-round indicator here.
+        if (phase.totalWodRounds > 1)
+            "Prossimo: Round ${phase.currentWodRound + 1}/${phase.totalWodRounds}"
+        else null
     }
-    // During REST (mid-round) show the next exercise as a preview.
-    // COUNTDOWN already shows the exercise large — don't duplicate here.
-    PhaseType.REST -> phase.nextExercise?.let { "Prossimo: $it" }
+    // REST: exercise is now shown large — no duplicate subLabel needed.
     else -> null
 }
 
