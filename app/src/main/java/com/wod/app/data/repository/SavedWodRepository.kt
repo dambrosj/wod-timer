@@ -64,6 +64,8 @@ class SavedWodRepository(private val dao: SavedWodDao) {
 
     suspend fun delete(id: String) = dao.deleteById(id)
 
+    suspend fun countAll(): Int = dao.count()
+
     /** Serializes all WODs to a pretty-printed JSON string (iOS-compatible format). */
     suspend fun exportJson(): String {
         val dtos = dao.getAll().map { it.toDomain().toExportDto() }

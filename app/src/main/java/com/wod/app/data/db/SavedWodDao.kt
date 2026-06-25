@@ -25,6 +25,9 @@ interface SavedWodDao {
     @Query("SELECT * FROM saved_wods ORDER BY isFavourite DESC, name ASC")
     suspend fun getAll(): List<SavedWodEntity>
 
+    @Query("SELECT COUNT(*) FROM saved_wods")
+    suspend fun count(): Int
+
     /** Silently ignores duplicate IDs — used for seeding built-in WODs. */
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertIfAbsent(entity: SavedWodEntity)

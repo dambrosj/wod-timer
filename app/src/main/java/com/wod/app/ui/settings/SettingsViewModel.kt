@@ -2,9 +2,7 @@ package com.wod.app.ui.settings
 
 import android.app.Application
 import android.content.Context
-import android.content.Intent
 import android.net.Uri
-import androidx.core.content.FileProvider
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.wod.app.WodApp
@@ -18,8 +16,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -39,11 +35,19 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
     private val prefs = wodApp.preferencesRepository
     private val wodRepo = wodApp.savedWodRepository
 
-    // null = idle, -1 = error, ≥0 = count of imported WODs
+    // null = idle, -1 = error, ≥0 = count
     private val _importResult = MutableStateFlow<Int?>(null)
     val importResult: StateFlow<Int?> = _importResult.asStateFlow()
-
     fun clearImportResult() { _importResult.value = null }
+
+    private val _exportResult = MutableStateFlow<Int?>(null)
+    val exportResult: StateFlow<Int?> = _exportResult.asStateFlow()
+    fun clearExportResult() { _exportResult.value = null }
+
+    fun suggestedExportFilename(): String {
+        val date = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date())
+        return "wod-backup-$date.json"
+    }
 
     val themeMode: StateFlow<ThemeMode> = prefs.themeModeFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ThemeMode.DARK)
@@ -90,49 +94,19 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch { prefs.setCategoryEnabled(category, enabled) }
     }
 
-    fun buildExportIntent(context: Context): Intent? {
-        var intent: Intent? = null
+    /** Writes the WOD backup JSON to [destUri] chosen by the user via CreateDocument picker. */
+    fun exportToUri(context: Context, destUri: Uri) {
         viewModelScope.launch(Dispatchers.IO) {
-            runCatching {
+            val count = runCatching {
                 val json = wodRepo.exportJson()
-                val date = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date())
-                val file = File(context.cacheDir, "wod-backup-$date.json")
-                file.writeText(json)
-                val uri = FileProvider.getUriForFile(
-                    context,
-                    "${context.packageName}.provider",
-                    file,
-                )
-                intent = Intent(Intent.ACTION_SEND).apply {
-                    type = "application/json"
-                    putExtra(Intent.EXTRA_STREAM, uri)
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                }
-            }
-        }
-        // Return synchronously for the launcher — the coroutine populates the file first
-        return intent
-    }
-
-    fun exportWods(context: Context, onReady: (Intent) -> Unit) {
-        viewModelScope.launch(Dispatchers.IO) {
-            runCatching {
-                val json = wodRepo.exportJson()
-                val date = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date())
-                val file = File(context.cacheDir, "wod-backup-$date.json")
-                file.writeText(json)
-                val uri = FileProvider.getUriForFile(
-                    context,
-                    "${context.packageName}.provider",
-                    file,
-                )
-                val intent = Intent(Intent.ACTION_SEND).apply {
-                    type = "application/json"
-                    putExtra(Intent.EXTRA_STREAM, uri)
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                }
-                withContext(Dispatchers.Main) { onReady(intent) }
-            }
+                context.contentResolver.openOutputStream(destUri)
+                    ?.bufferedWriter()
+                    ?.use { it.write(json) }
+                    ?: return@runCatching -1
+                // Count actual WODs written by re-parsing is wasteful; count from repo.
+                wodRepo.countAll()
+            }.getOrElse { -1 }
+            _exportResult.value = count
         }
     }
 

@@ -1,6 +1,5 @@
 package com.wod.app.ui.settings
 
-import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -58,6 +57,7 @@ fun SettingsScreen(onBack: () -> Unit) {
     val audioSettings by vm.audioSettings.collectAsStateWithLifecycle()
     val themeMode by vm.themeMode.collectAsStateWithLifecycle()
     val importResult by vm.importResult.collectAsStateWithLifecycle()
+    val exportResult by vm.exportResult.collectAsStateWithLifecycle()
     val colors = WodTheme.colors
     val typography = WodTheme.typography
     val spacing = WodTheme.spacing
@@ -66,13 +66,23 @@ fun SettingsScreen(onBack: () -> Unit) {
     val snackbarHost = remember { SnackbarHostState() }
 
     val exportLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { /* no-op: file already shared */ }
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        if (uri != null) vm.exportToUri(context, uri)
+    }
 
     val importLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument()
     ) { uri ->
         if (uri != null) vm.importWods(context, uri)
+    }
+
+    LaunchedEffect(exportResult) {
+        exportResult?.let { count ->
+            val msg = if (count >= 0) "Esportati $count WOD con successo." else "Errore durante l'esportazione."
+            scope.launch { snackbarHost.showSnackbar(msg) }
+            vm.clearExportResult()
+        }
     }
 
     LaunchedEffect(importResult) {
@@ -240,9 +250,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                 colors = colors,
                 typography = typography,
             ) {
-                vm.exportWods(context) { intent ->
-                    exportLauncher.launch(Intent.createChooser(intent, "Esporta WOD"))
-                }
+                exportLauncher.launch(vm.suggestedExportFilename())
             }
             Spacer(Modifier.height(spacing.s))
             DataRow(
