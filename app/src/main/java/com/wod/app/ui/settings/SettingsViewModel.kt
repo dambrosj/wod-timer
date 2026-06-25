@@ -1,16 +1,28 @@
 package com.wod.app.ui.settings
 
 import android.app.Application
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import androidx.core.content.FileProvider
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.wod.app.WodApp
 import com.wod.app.domain.model.CueCategory
 import com.wod.app.ui.theme.ThemeMode
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 data class AudioSettings(
     val masterEnabled: Boolean = true,
@@ -25,6 +37,13 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
 
     private val wodApp = app as WodApp
     private val prefs = wodApp.preferencesRepository
+    private val wodRepo = wodApp.savedWodRepository
+
+    // null = idle, -1 = error, ≥0 = count of imported WODs
+    private val _importResult = MutableStateFlow<Int?>(null)
+    val importResult: StateFlow<Int?> = _importResult.asStateFlow()
+
+    fun clearImportResult() { _importResult.value = null }
 
     val themeMode: StateFlow<ThemeMode> = prefs.themeModeFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ThemeMode.DARK)
@@ -69,6 +88,63 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setCategoryEnabled(category: CueCategory, enabled: Boolean) {
         viewModelScope.launch { prefs.setCategoryEnabled(category, enabled) }
+    }
+
+    fun buildExportIntent(context: Context): Intent? {
+        var intent: Intent? = null
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching {
+                val json = wodRepo.exportJson()
+                val date = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date())
+                val file = File(context.cacheDir, "wod-backup-$date.json")
+                file.writeText(json)
+                val uri = FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.provider",
+                    file,
+                )
+                intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "application/json"
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+            }
+        }
+        // Return synchronously for the launcher — the coroutine populates the file first
+        return intent
+    }
+
+    fun exportWods(context: Context, onReady: (Intent) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching {
+                val json = wodRepo.exportJson()
+                val date = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date())
+                val file = File(context.cacheDir, "wod-backup-$date.json")
+                file.writeText(json)
+                val uri = FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.provider",
+                    file,
+                )
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "application/json"
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                withContext(Dispatchers.Main) { onReady(intent) }
+            }
+        }
+    }
+
+    fun importWods(context: Context, uri: Uri) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val count = runCatching {
+                val jsonString = context.contentResolver.openInputStream(uri)
+                    ?.bufferedReader()?.readText() ?: return@runCatching -1
+                wodRepo.importJson(jsonString)
+            }.getOrElse { -1 }
+            _importResult.value = count
+        }
     }
 
     /**

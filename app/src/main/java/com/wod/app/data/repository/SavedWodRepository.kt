@@ -14,7 +14,8 @@ import kotlinx.serialization.json.Json
 
 class SavedWodRepository(private val dao: SavedWodDao) {
 
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = Json { ignoreUnknownKeys = true; prettyPrint = false }
+    private val prettyJson = Json { ignoreUnknownKeys = true; prettyPrint = true }
 
     val allFlow: Flow<List<SavedWod>> = dao.getAllFlow().map { it.map(::toDomain) }
 
@@ -62,6 +63,30 @@ class SavedWodRepository(private val dao: SavedWodDao) {
     }
 
     suspend fun delete(id: String) = dao.deleteById(id)
+
+    /** Serializes all WODs to a pretty-printed JSON string (iOS-compatible format). */
+    suspend fun exportJson(): String {
+        val dtos = dao.getAll().map { it.toDomain().toExportDto() }
+        return prettyJson.encodeToString<List<SavedWodExportDto>>(dtos)
+    }
+
+    /**
+     * Decodes [jsonString] and upserts each WOD (overwrite if ID exists, insert if new).
+     * Returns the number of WODs successfully processed.
+     */
+    suspend fun importJson(jsonString: String): Int {
+        val dtos = runCatching {
+            json.decodeFromString<List<SavedWodExportDto>>(jsonString)
+        }.getOrElse { return 0 }
+        var count = 0
+        dtos.forEach { dto ->
+            dto.toDomain()?.let { wod ->
+                dao.upsert(wod.toEntity())
+                count++
+            }
+        }
+        return count
+    }
 
     /** Idempotent: inserts only the built-in WODs that don't already exist in the DB. */
     suspend fun seedBuiltIns() {

@@ -1,6 +1,10 @@
 package com.wod.app.ui.settings
 
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -8,10 +12,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -19,6 +25,8 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -27,9 +35,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -38,6 +49,7 @@ import com.wod.app.ui.theme.ThemeMode
 import com.wod.app.ui.theme.WodColors
 import com.wod.app.ui.theme.WodPreview
 import com.wod.app.ui.theme.WodTheme
+import kotlinx.coroutines.launch
 
 /** Settings screen: audio controls + theme selection (T45-T46). */
 @Composable
@@ -45,14 +57,41 @@ fun SettingsScreen(onBack: () -> Unit) {
     val vm: SettingsViewModel = viewModel()
     val audioSettings by vm.audioSettings.collectAsStateWithLifecycle()
     val themeMode by vm.themeMode.collectAsStateWithLifecycle()
+    val importResult by vm.importResult.collectAsStateWithLifecycle()
     val colors = WodTheme.colors
     val typography = WodTheme.typography
     val spacing = WodTheme.spacing
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val snackbarHost = remember { SnackbarHostState() }
 
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { /* no-op: file already shared */ }
+
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) vm.importWods(context, uri)
+    }
+
+    LaunchedEffect(importResult) {
+        importResult?.let { count ->
+            val msg = if (count >= 0) "Importati $count WOD con successo." else "Errore durante l'importazione."
+            scope.launch { snackbarHost.showSnackbar(msg) }
+            vm.clearImportResult()
+        }
+    }
+
+    androidx.compose.material3.Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHost) },
+        containerColor = colors.bgPrimary,
+    ) { innerPadding ->
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(colors.bgPrimary),
+            .background(colors.bgPrimary)
+            .padding(innerPadding),
     ) {
         // Top bar
         Row(
@@ -188,9 +227,38 @@ fun SettingsScreen(onBack: () -> Unit) {
             ThemeOption(ThemeMode.LIGHT, "Chiaro", themeMode, colors, typography) { vm.setThemeMode(ThemeMode.LIGHT) }
             ThemeOption(ThemeMode.AUTO, "Automatico", themeMode, colors, typography) { vm.setThemeMode(ThemeMode.AUTO) }
 
+            Spacer(Modifier.height(spacing.l))
+            HorizontalDivider(color = colors.divider)
+            Spacer(Modifier.height(spacing.l))
+
+            // ── Dati ────────────────────────────────────────────────────────────
+            SectionHeader("Dati", colors, typography)
+            DataRow(
+                label = "Esporta WOD",
+                subtitle = "Salva tutti i WOD in un file JSON",
+                icon = androidx.compose.material.icons.Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                colors = colors,
+                typography = typography,
+            ) {
+                vm.exportWods(context) { intent ->
+                    exportLauncher.launch(Intent.createChooser(intent, "Esporta WOD"))
+                }
+            }
+            Spacer(Modifier.height(spacing.s))
+            DataRow(
+                label = "Importa WOD",
+                subtitle = "Carica WOD da un file JSON (sovrascrive se esistenti)",
+                icon = androidx.compose.material.icons.Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                colors = colors,
+                typography = typography,
+            ) {
+                importLauncher.launch(arrayOf("application/json", "application/octet-stream", "*/*"))
+            }
+
             Spacer(Modifier.height(spacing.xl))
         }
     }
+    } // Scaffold
 }
 
 @Composable
@@ -253,6 +321,35 @@ private fun ThemeOption(
             ),
         )
         Text(label, style = typography.bodyLarge, color = colors.textPrimary)
+    }
+}
+
+@Composable
+private fun DataRow(
+    label: String,
+    subtitle: String,
+    icon: ImageVector,
+    colors: WodColors,
+    typography: com.wod.app.ui.theme.WodTypography,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(label, style = typography.bodyLarge, color = colors.textPrimary)
+            Text(subtitle, style = typography.bodyMedium, color = colors.textSecondary)
+        }
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = colors.textDisabled,
+            modifier = Modifier.size(20.dp),
+        )
     }
 }
 
